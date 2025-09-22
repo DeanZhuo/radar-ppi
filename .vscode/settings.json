@@ -2,7 +2,8 @@
   "files.associations": {
     "stdio.h": "c",
     "cmath": "cpp",
-    "vector": "cpp"
+    "vector": "cpp",
+    "iostream": "cpp"
   },
   "cmake.generator": "MinGW Makefiles",
   "cmake.configureSettings": {
@@ -14,6 +15,7 @@
     "MINGW_HOME": "D:/Opt/dev/mingw64",
     "GLUT": "D:/Opt/dev/libs/freeglut-3.6.0",
     "GLEW": "D:/Opt/dev/libs/glew-2.1.0",
+    "GLFW": "D:/Opt/dev/libs/glfw-3.4",
     "PATH": "${env:PATH};D:/Opt/dev/mingw64/bin"
   }
 }

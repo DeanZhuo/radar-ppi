@@ -1,19 +1,64 @@
-#include <GL/freeglut.h>
+// Radar PPI Display with OpenGL 3 Core Profile using GLFW and GLEW
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <cmath>
 #include <vector>
-
 #include <iostream>
-#include <string>
-#include <stdio.h>
 
+// Shaders
+const char* vertexShaderSrc = R"(
+#version 330 core
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec4 aColor;
+out vec4 vColor;
+void main() {
+    gl_Position = vec4(aPos, 0.0, 1.0);
+    vColor = aColor;
+}
+)";
 
-constexpr float PI = 3.14159265358979323846f;
-constexpr int window_width = 800;
-constexpr int window_height = 800;
+const char* fragmentShaderSrc = R"(
+#version 330 core
+in vec4 vColor;
+out vec4 FragColor;
+void main() {
+    FragColor = vColor;
+}
+)";
 
-float sweep_angle = 0.0f;       // Current sweep angle in degrees
-float sweep_speed = 60.0f;      // Degrees per second
-float detection_tolerance = 5.0f; // Degrees tolerance for target detection
+// Utility: Compile shader
+GLuint compileShader(GLenum type, const char* src) {
+    GLuint s = glCreateShader(type);
+    glShaderSource(s, 1, &src, nullptr);
+    glCompileShader(s);
+    GLint status;
+    glGetShaderiv(s, GL_COMPILE_STATUS, &status);
+    if (!status) {
+        char log[512];
+        glGetShaderInfoLog(s, 512, nullptr, log);
+        std::cerr << "Shader compile error: " << log << std::endl;
+    }
+    return s;
+}
+
+// Utility: Link program
+GLuint createProgram() {
+    GLuint vs = compileShader(GL_VERTEX_SHADER, vertexShaderSrc);
+    GLuint fs = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSrc);
+
+    GLuint prog = glCreateProgram();
+    glAttachShader(prog, vs);
+    glAttachShader(prog, fs);
+    glLinkProgram(prog);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+    return prog;
+}
+
+// Radar model
+constexpr float PI = 3.14159265359f;
 
 struct Target {
     float angle;
@@ -21,6 +66,7 @@ struct Target {
     bool detected;
 };
 
+// Static targets (polar: angle, radius)
 std::vector<Target> targets = {
     {30.0f, 0.6f, false},
     {90.0f, 0.75f, false},
@@ -29,124 +75,171 @@ std::vector<Target> targets = {
     {300.0f, 0.65f, false}
 };
 
-inline float deg2rad(float deg) {
-    return deg * PI / 180.0f;
-}
+float sweep_angle = 0.0f; // degrees
+float sweep_speed = 60.0f; // deg/sec
+const float det_tolerance = 5.0f;
 
-void drawCircle(float radius, int segments) {
-    glBegin(GL_LINE_LOOP);
-    for (int i = 0; i < segments; i++) {
-        float angle = 2.0f * PI * i / segments;
-        glVertex2f(radius * cos(angle), radius * sin(angle));
+// Generate grid vertices (rings and radial lines)
+void createRadarGrid(std::vector<float>& vertices, std::vector<float>& colors) {
+    // Rings
+    int rings = 5, seg = 100;
+    for (int r = 1; r <= rings; r++) {
+        float rad = r * 0.2f;
+        for (int i = 0; i <= seg; i++) {
+            float th = 2 * PI * i / seg;
+            vertices.push_back(rad * cos(th));
+            vertices.push_back(rad * sin(th));
+            colors.push_back(0.0f);
+            colors.push_back(0.4f);
+            colors.push_back(0.0f);
+            colors.push_back(1.0f);
+        }
     }
-    glEnd();
-}
-
-void drawRadarGrid() {
-    glColor3f(0.0f, 0.4f, 0.0f);
-    int rings = 5;
-    for (int i = 1; i <= rings; i++)
-        drawCircle(i * 0.2f, 100);
-
-    glBegin(GL_LINES);
+    // Radial lines (every 30 deg)
     for (int i = 0; i < 12; i++) {
-        float angle = deg2rad(i * 30.0f);
-        glVertex2f(0.0f, 0.0f);
-        glVertex2f(cos(angle), sin(angle));
+        float th = PI * i * 30.0f / 180.0f;
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+        colors.push_back(0.0f);
+        colors.push_back(0.4f);
+        colors.push_back(0.0f);
+        colors.push_back(1.0f);
+        vertices.push_back(cos(th));
+        vertices.push_back(sin(th));
+        colors.push_back(0.0f);
+        colors.push_back(0.4f);
+        colors.push_back(0.0f);
+        colors.push_back(1.0f);
     }
-    glEnd();
 }
 
-void drawRadarSweep() {
-    int segments = 100;
-    float sweep_width_deg = 5.0f;
-    float start_angle = sweep_angle - sweep_width_deg / 2.0f;
-    float end_angle = sweep_angle + sweep_width_deg / 2.0f;
-
-    glBegin(GL_TRIANGLE_FAN);
-    glColor4f(0.0f, 1.0f, 0.0f, 0.4f);
-    glVertex2f(0.0f, 0.0f);
-    for (int i = 0; i <= segments; i++) {
-        float angle = deg2rad(start_angle + (end_angle - start_angle) * i / segments);
-        float alpha = 0.4f * (1.0f - (float)i / segments);
-        glColor4f(0.0f, 1.0f, 0.0f, alpha);
-        glVertex2f(cos(angle), sin(angle));
+// Generate sweep cone vertices
+void createSweep(std::vector<float>& vertices, std::vector<float>& colors, float sweep_angle) {
+    int seg = 100;
+    float width = 5.0f;
+    float th0 = sweep_angle - width / 2.0f;
+    float th1 = sweep_angle + width / 2.0f;
+    vertices.push_back(0.0f); vertices.push_back(0.0f); // center
+    colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(0.4f);
+    for (int i = 0; i <= seg; i++) {
+        float th = (th0 + (th1-th0)*i/seg) * PI / 180.0f;
+        vertices.push_back(cos(th));
+        vertices.push_back(sin(th));
+        float alpha = 0.4f * (1.0f - float(i)/seg);
+        colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(alpha);
     }
-    glEnd();
 }
 
-void drawTargets() {
-    float point_size = 10.0f;
-    glPointSize(point_size);
-    glBegin(GL_POINTS);
-    for (auto& t : targets) {
-        if (t.detected) glColor3f(1.0f, 1.0f, 0.0f);
-        else glColor3f(0.0f, 1.0f, 0.0f);
-        float rad = deg2rad(t.angle);
-        glVertex2f(cos(rad) * t.radius, sin(rad) * t.radius);
-    }
-    glEnd();
-}
-
+// Update detection for target highlight
 void updateDetection() {
     for (auto& t : targets) {
         float diff = fabs(t.angle - sweep_angle);
         if (diff > 180.0f) diff = 360.0f - diff;
-        t.detected = (diff <= detection_tolerance);
+        t.detected = (diff <= det_tolerance);
     }
 }
 
-void display() {
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    drawRadarGrid();
-    drawRadarSweep();
-    drawTargets();
-
-    glutSwapBuffers();
+// Generate target point vertices
+void createTargets(std::vector<float>& vertices, std::vector<float>& colors) {
+    for (const auto& t : targets) {
+        float th = t.angle * PI / 180.0f;
+        vertices.push_back(cos(th) * t.radius);
+        vertices.push_back(sin(th) * t.radius);
+        if (t.detected) {
+            colors.push_back(1.0f); colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(1.0f);
+        } else {
+            colors.push_back(0.0f); colors.push_back(1.0f); colors.push_back(0.0f); colors.push_back(1.0f);
+        }
+    }
 }
 
-void timer(int) {
-    sweep_angle -= sweep_speed * 0.016f;
-    // printf("%f\n", sweep_angle);
-    if (sweep_angle >= 360.0f) sweep_angle -= 360.0f;
+int main() {
+    if (!glfwInit()) return 1;
+    // OpenGL 3.3 Core Profile
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    updateDetection();
+    GLFWwindow* w = glfwCreateWindow(800, 800, "Radar PPI - OpenGL 3 Core", nullptr, nullptr);
+    if (!w) { glfwTerminate(); return 2; }
 
-    glutPostRedisplay();
-    glutTimerFunc(16, timer, 0);
-}
+    glfwMakeContextCurrent(w);
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) { std::cerr << "GLEW fail\n"; return 3; }
 
-void initGL() {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    GLuint program = createProgram();
+    glUseProgram(program);
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
 
-void reshape(int w, int h) {
-    glViewport(0, 0, w, h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    if (w <= h)
-        gluOrtho2D(-1.0, 1.0, -1.0 * (GLfloat)h / w, 1.0 * (GLfloat)h / w);
-    else
-        gluOrtho2D(-1.0 * (GLfloat)w / h, 1.0 * (GLfloat)w / h, -1.0, 1.0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-}
+    // Buffers/VAOs
+    GLuint vao, vbo[2];
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(2, vbo);
 
-int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    glutInitWindowSize(window_width, window_height);
-    glutCreateWindow("Radar PPI Display - OpenGL");
+    double lastTime = glfwGetTime();
 
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
-    glutTimerFunc(0, timer, 0);
+    while (!glfwWindowShouldClose(w)) {
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    initGL();
+        // Update sweep angle
+        double now = glfwGetTime();
+        double dt = now - lastTime;
+        lastTime = now;
+        sweep_angle += sweep_speed * dt;
+        if (sweep_angle > 360.0f) sweep_angle -= 360.0f;
+        updateDetection();
 
-    glutMainLoop();
+        // Radar grid
+        std::vector<float> grid_verts, grid_cols;
+        createRadarGrid(grid_verts, grid_cols);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+        glBufferData(GL_ARRAY_BUFFER, grid_verts.size() * sizeof(float), grid_verts.data(), GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(0); // pos
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+        glBufferData(GL_ARRAY_BUFFER, grid_cols.size() * sizeof(float), grid_cols.data(), GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(1); // color
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+        // Rings
+        int seg = 100;
+        for (int r = 0; r < 5; r++) {
+            glDrawArrays(GL_LINE_STRIP, r*(seg+1), seg+1);
+        }
+        // Radial lines
+        int gridBase = 5*(seg+1);
+        glDrawArrays(GL_LINES, gridBase, 24);
+
+        // Radar sweep
+        std::vector<float> sweep_verts, sweep_cols;
+        createSweep(sweep_verts, sweep_cols, sweep_angle);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+        glBufferData(GL_ARRAY_BUFFER, sweep_verts.size() * sizeof(float), sweep_verts.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+        glBufferData(GL_ARRAY_BUFFER, sweep_cols.size() * sizeof(float), sweep_cols.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, sweep_verts.size()/2);
+
+        // Targets
+        std::vector<float> tgt_verts, tgt_cols;
+        createTargets(tgt_verts, tgt_cols);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+        glBufferData(GL_ARRAY_BUFFER, tgt_verts.size() * sizeof(float), tgt_verts.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+        glBufferData(GL_ARRAY_BUFFER, tgt_cols.size() * sizeof(float), tgt_cols.data(), GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+        glPointSize(10.0f);
+        glDrawArrays(GL_POINTS, 0, tgt_verts.size()/2);
+
+        glfwSwapBuffers(w);
+        glfwPollEvents();
+    }
+    glfwTerminate();
     return 0;
 }

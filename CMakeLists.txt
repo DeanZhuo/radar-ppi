@@ -13,17 +13,22 @@ if(MINGW)
   message(FATAL_ERROR "GLEW libs not defined")
   endif()
 
-  set(CMAKE_PREFIX_PATH "${MINGW_HOME};${GLUT};${GLEW}")
+  if ("${GLFW}" STREQUAL "")
+  message(FATAL_ERROR "GLFW libs not defined")
+  endif()
+
+  set(CMAKE_PREFIX_PATH "${MINGW_HOME};${GLUT};${GLEW};${GLFW}")
   set(GLUT_INCLUDE_DIR "${GLUT}/include")
 endif()
 
-# Find OpenGL, GLEW and GLUT (prefer freeglut)
+# Find OpenGL, GLFW, GLEW and GLUT (prefer freeglut)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(glfw3 3.4 REQUIRED)
 
 if (MINGW)
-  include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
+  include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS})
 endif()
 
 add_executable(radar_ppi src/main.cpp)
@@ -32,6 +37,7 @@ target_link_libraries(radar_ppi
   ${OPENGL_LIBRARIES}
   GLUT::GLUT
   GLEW::GLEW
+  glfw
 )
 
 

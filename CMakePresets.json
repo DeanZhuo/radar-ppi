@@ -18,7 +18,8 @@
         },
         "MINGW_HOME": "$env{MINGW_HOME}",
         "GLUT": "$env{USR_LIBS}/freeglut-3.6.0",
-        "GLEW": "$env{USR_LIBS}/glew-2.1.0"
+        "GLEW": "$env{USR_LIBS}/glew-2.1.0",
+        "GLFW": "$env{USR_LIBS}/glfw-3.4"
       },
       "environment": {
         "PATH": "D:/Opt/dev/mingw64/bin;$penv{PATH}",
