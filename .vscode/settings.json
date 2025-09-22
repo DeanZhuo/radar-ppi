@@ -1,0 +1,17 @@
+{
+  "files.associations": {
+    "stdio.h": "c"
+  },
+  "cmake.generator": "MinGW Makefiles",
+  "cmake.configureSettings": {
+    "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/mingw-toolchain.cmake"
+  },
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.cmakePath": "D:/Opt/mingw64/bin/cmake.exe",
+  "terminal.integrated.env.windows": {
+    "MINGW_HOME": "D:/Opt/dev/mingw64",
+    "GLUT": "D:/Opt/dev/libs/freeglut-3.6.0",
+    "GLEW": "D:/Opt/dev/libs/glew-2.1.0",
+    "PATH": "${env:PATH};D:/Opt/dev/mingw64/bin"
+  }
+}
