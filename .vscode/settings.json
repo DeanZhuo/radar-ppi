@@ -1,6 +1,8 @@
 {
   "files.associations": {
-    "stdio.h": "c"
+    "stdio.h": "c",
+    "cmath": "cpp",
+    "vector": "cpp"
   },
   "cmake.generator": "MinGW Makefiles",
   "cmake.configureSettings": {
