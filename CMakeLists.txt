@@ -26,9 +26,9 @@ if (MINGW)
   include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
 endif()
 
-add_executable(PROJECT_NAME src/main.cpp)
+add_executable(radar_ppi src/main.cpp)
 
-target_link_libraries(PROJECT_NAME
+target_link_libraries(radar_ppi
   ${OPENGL_LIBRARIES}
   GLUT::GLUT
   GLEW::GLEW
@@ -37,19 +37,15 @@ target_link_libraries(PROJECT_NAME
 
 if (MINGW)
   # Get the path to the executable's output directory
-  set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
-  # get_target_property(OUTPUT_DIR radar_ppi RUNTIME_OUTPUT_DIRECTORY)
+  get_target_property(OUTPUT_DIR radar_ppi RUNTIME_OUTPUT_DIRECTORY)
 
   # Find the DLLs
   # For freeglut
   find_file(FREEGLUT_DLL libfreeglut.dll HINTS ${GLUT} PATH_SUFFIXES bin)
-
   # For GLEW
   find_file(GLEW_DLL glew32.dll HINTS ${GLEW} PATH_SUFFIXES bin)
-
   # For libstdc++-6.dll from MinGW
   find_file(STDCPP_DLL libstdc++-6.dll HINTS ${CMAKE_CXX_COMPILER} PATH_SUFFIXES ../bin)
-
   # For libgcc_s_seh-1.dll from MinGW
   find_file(GCC_S_SEH_DLL libgcc_s_seh-1.dll HINTS ${CMAKE_CXX_COMPILER} PATH_SUFFIXES ../bin)
   # For libwinpthread-1.dll from MinGW
@@ -58,35 +54,35 @@ if (MINGW)
   # Add a custom command to copy the DLLs after the build
   if(FREEGLUT_DLL AND GLEW_DLL AND STDCPP_DLL AND GCC_S_SEH_DLL AND WIN_PTHREAD_DLL)
     add_custom_command(
-      TARGET PROJECT_NAME POST_BUILD
+      TARGET radar_ppi POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
       ${FREEGLUT_DLL}
       ${OUTPUT_DIR}
       COMMENT "Copying freeglut dll"
     )
     add_custom_command(
-      TARGET PROJECT_NAME POST_BUILD
+      TARGET radar_ppi POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
       ${GLEW_DLL}
       ${OUTPUT_DIR}
       COMMENT "Copying glew32 dll"
     )
     add_custom_command(
-      TARGET PROJECT_NAME POST_BUILD
+      TARGET radar_ppi POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
       ${STDCPP_DLL}
       ${OUTPUT_DIR}
       COMMENT "Copying libstdc++ dll"
     )
     add_custom_command(
-      TARGET PROJECT_NAME POST_BUILD
+      TARGET radar_ppi POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
       ${GCC_S_SEH_DLL}
       ${OUTPUT_DIR}
       COMMENT "Copying libwinpthread dll"
     )
     add_custom_command(
-      TARGET PROJECT_NAME POST_BUILD
+      TARGET radar_ppi POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
       ${WIN_PTHREAD_DLL}
       ${OUTPUT_DIR}

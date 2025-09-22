@@ -4,4 +4,4 @@
 # set(CMAKE_RC_COMPILER  "${MINGW_HOME}/bin/windres.exe")
 
 # Set additional flags and root paths
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
