@@ -1,4 +1,3 @@
-#define GLUT_DISABLE_ATEXIT_HACK
 #include <GL/freeglut.h>
 #include <cmath>
 #include <vector>
