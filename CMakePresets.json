@@ -5,7 +5,6 @@
     "minor": 1,
     "patch": 0
   },
-
   "configurePresets": [
     {
       "name": "default",
@@ -22,9 +21,9 @@
         "GLFW": "$env{USR_LIBS}/glfw-3.4"
       },
       "environment": {
-        "PATH": "D:/Opt/dev/mingw64/bin;$penv{PATH}",
-        "MINGW_HOME": "D:/Opt/dev/mingw64",
-        "USR_LIBS": "D:/Opt/dev/libs"
+        "PATH": "C:/Users/Bee/Documents/CCPP/dev/mingw64/bin;$penv{PATH}",
+        "MINGW_HOME": "C:/Users/Bee/Documents/CCPP/dev/mingw64",
+        "USR_LIBS": "C:/Users/Bee/Documents/CCPP/dev/libs"
       }
     }
   ]

@@ -31,7 +31,12 @@ if (MINGW)
   include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS})
 endif()
 
-add_executable(radar_ppi src/main.cpp)
+file(GLOB SRC_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp")
+add_executable(radar_ppi ${SRC_FILES})
+
+target_include_directories(radar_ppi PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+)
 
 target_link_libraries(radar_ppi
   ${OPENGL_LIBRARIES}
