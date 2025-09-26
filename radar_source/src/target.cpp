@@ -21,18 +21,15 @@ void TargetManager::animate(float dt)
     }
 }
 
-void TargetManager::detect(const Radar &radar)
+void TargetManager::detect(float sweepAngle, float detTolerance)
 {
-    float sweep = radar.getSweepAngle();
-    float tol = radar.getTolerance();
-
     for (auto &t : targets)
     {
-        float diff = fmodf(fabsf(t.angle - sweep), 360.0f);
+        float diff = fmodf(fabsf(t.angle - sweepAngle), 360.0f);
         if (diff > 180.0f)
             diff = 360.0f - diff;
 
-        t.detected = (diff <= tol);
+        t.detected = (diff <= detTolerance);
     }
 }
 

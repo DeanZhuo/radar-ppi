@@ -19,7 +19,7 @@ public:
     std::vector<Target> targets;
 
     void animate(float dt);
-    void detect(const Radar &radar);
+    void detect(float sweepAngle, float detTolerance);
     void init();
     void draw();
 

@@ -8,7 +8,9 @@
 
 #include "helper.h"
 #include "shader.h"
-#include "radar.h"
+// #include "radar.h"
+#include "radarGeometry.h"
+#include "radarRenderer.h"
 #include "target.h"
 
 const char *vertexShaderSrc = R"(#version 330 core
@@ -75,9 +77,16 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    /*
     Radar radar(sweep_speed, sweep_angle, det_tolerance);
     radar.createRadarGrid(5, 12);
     radar.initSweep();
+    */
+
+    RadarGeometry geo(sweep_speed, sweep_angle, det_tolerance);
+    RadarRenderer gridRenderer, sweepRenderer;
+    auto gridVerts = geo.generateGrid(5, 12);
+    gridRenderer.upload(gridVerts);
 
     TargetManager targetManager;
     targetManager.targets = targets;
@@ -85,6 +94,7 @@ int main()
 
     double lastTime = glfwGetTime();
     glClearColor(0, 0, 0, 1);
+    float sweepAngle, detTolerance;
 
     while (!glfwWindowShouldClose(w))
     {
@@ -94,11 +104,25 @@ int main()
         double dt = now - lastTime;
         lastTime = now;
 
+        auto sweepVerts = geo.generateSweep(dt);
+        sweepRenderer.upload(sweepVerts);
+
+        gridRenderer.render(GL_LINE_STRIP);
+        gridRenderer.render(GL_LINE);
+        sweepRenderer.render(GL_TRIANGLE_FAN);
+
+        sweepAngle = geo.getSweepAngle();
+        detTolerance = geo.getTolerance();
+
+        /*
         radar.drawGrid();
         radar.updateSweep(dt);
+        sweepAngle = radar.getSweepAngle();
+        detTolerance = radar.getTolerance();
+        */
 
-        targetManager.animate(dt);   // moves targets
-        targetManager.detect(radar); // checks against sweep
+        targetManager.animate(dt);
+        targetManager.detect(sweepAngle, detTolerance);
         targetManager.draw();
 
         glfwSwapBuffers(w);
