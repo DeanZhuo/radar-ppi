@@ -9,6 +9,7 @@
 #include "helper.h"
 #include "shader.h"
 #include "radar.h"
+#include "target.h"
 
 const char *vertexShaderSrc = R"(#version 330 core
 layout(location = 0) in vec2 aPos;
@@ -30,11 +31,15 @@ void main() {
 
 // Static targets (polar: angle, radius)
 std::vector<Target> targets = {
-    {30.0f, 0.6f, false},
-    {90.0f, 0.75f, false},
-    {135.0f, 0.5f, false},
-    {210.0f, 0.85f, false},
-    {300.0f, 0.65f, false}};
+    {30.0f, 0.6f, false, 10.0f, 0.0f},
+    {90.0f, 0.75f, false, -15.0f, 0.0f},
+    {135.0f, 0.5f, false, 20.0f, 0.0f},
+    {180.0f, 0.9f, false, -5.0f, 0.0f},
+    {210.0f, 0.85f, false, 0.0f, -0.1f},
+    {240.0f, 0.4f, false, 0.0f, 0.2f},
+    {300.0f, 0.65f, false, -10.0f, 0.0f},
+    {330.0f, 0.3f, false, 5.0f, 0.0f},
+};
 
 float sweep_angle = 0.0f;  // degrees
 float sweep_speed = 60.0f; // deg/sec
@@ -73,7 +78,10 @@ int main()
     Radar radar(sweep_speed, sweep_angle, det_tolerance);
     radar.createRadarGrid(5, 12);
     radar.initSweep();
-    radar.initTarget();
+
+    TargetManager targetManager;
+    targetManager.targets = targets;
+    targetManager.init();
 
     double lastTime = glfwGetTime();
     glClearColor(0, 0, 0, 1);
@@ -88,8 +96,10 @@ int main()
 
         radar.drawGrid();
         radar.updateSweep(dt);
-        radar.updateTargets(targets); // check if target changed?
-        radar.drawTargets();
+
+        targetManager.animate(dt);   // moves targets
+        targetManager.detect(radar); // checks against sweep
+        targetManager.draw();
 
         glfwSwapBuffers(w);
         glfwPollEvents();

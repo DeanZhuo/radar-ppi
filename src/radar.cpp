@@ -14,7 +14,6 @@ Radar::~Radar()
 {
     grid.cleanup();
     sweep.cleanup();
-    targetsObj.cleanup();
 }
 
 void Radar::update(float speed, float angle, float tolerance)
@@ -22,77 +21,6 @@ void Radar::update(float speed, float angle, float tolerance)
     sweep_speed = speed;
     sweep_angle += angle;
     det_tolerance = tolerance;
-}
-
-void Radar::initTarget()
-{
-    targetsObj.cleanup();
-    glGenVertexArrays(1, &targetsObj.VAO);
-    glGenBuffers(1, &targetsObj.VBOPos);
-    glGenBuffers(1, &targetsObj.VBOCol);
-}
-
-void Radar::updateTargets(std::vector<Target> targetsUpdated)
-{
-    targets = targetsUpdated;
-
-    std::vector<float> vertices;
-    std::vector<float> colors;
-    vertices.reserve(targets.size() * 2);
-    colors.reserve(targets.size() * 4);
-
-    for (auto &t : targets)
-    {
-        float diff = fabs(t.angle - sweep_angle);
-        if (diff > 180.0f)
-            diff = 360.0f - diff;
-        t.detected = (diff <= det_tolerance);
-
-        float th = t.angle * PI / 180.0f;
-        vertices.push_back(cos(th) * t.radius);
-        vertices.push_back(sin(th) * t.radius);
-        if (t.detected)
-        {
-            colors.push_back(1.0f);
-            colors.push_back(1.0f);
-            colors.push_back(0.0f);
-            colors.push_back(1.0f);
-        }
-        else
-        {
-            colors.push_back(0.0f);
-            colors.push_back(1.0f);
-            colors.push_back(0.0f);
-            colors.push_back(1.0f);
-        }
-    }
-
-    targetsObj.vertexCount = targets.size();
-
-    glBindVertexArray(targetsObj.VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, targetsObj.VBOPos);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, targetsObj.VBOCol);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-}
-
-void Radar::drawTargets()
-{
-    if (targetsObj.vertexCount == 0)
-        return;
-
-    glBindVertexArray(targetsObj.VAO);
-    glPointSize(10.0f);
-    glDrawArrays(GL_POINTS, 0, targetsObj.vertexCount);
-    glBindVertexArray(0);
 }
 
 void Radar::drawGrid()
@@ -159,35 +87,6 @@ void Radar::updateSweep(float deltaTime)
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, verts.size() / 2);
     glBindVertexArray(0);
-}
-
-void Radar::createTargets(std::vector<float> &vertices, std::vector<float> &colors)
-{
-    for (auto &t : targets)
-    {
-        float diff = fabs(t.angle - sweep_angle);
-        if (diff > 180.0f)
-            diff = 360.0f - diff;
-        t.detected = (diff <= det_tolerance);
-
-        float th = t.angle * PI / 180.0f;
-        vertices.push_back(cos(th) * t.radius);
-        vertices.push_back(sin(th) * t.radius);
-        if (t.detected)
-        {
-            colors.push_back(1.0f);
-            colors.push_back(1.0f);
-            colors.push_back(0.0f);
-            colors.push_back(1.0f);
-        }
-        else
-        {
-            colors.push_back(0.0f);
-            colors.push_back(1.0f);
-            colors.push_back(0.0f);
-            colors.push_back(1.0f);
-        }
-    }
 }
 
 void Radar::createRadarGrid(int numRings, int numRadials)
@@ -278,4 +177,24 @@ void Radar::createSweep(std::vector<float> &vertices, std::vector<float> &colors
         colors.push_back(0.0f);
         colors.push_back(alpha);
     }
+}
+
+void RadarObject::cleanup()
+{
+    if (VBOPos)
+    {
+        glDeleteBuffers(1, &VBOPos);
+        VBOPos = 0;
+    }
+    if (VBOCol)
+    {
+        glDeleteBuffers(1, &VBOCol);
+        VBOCol = 0;
+    }
+    if (VAO)
+    {
+        glDeleteVertexArrays(1, &VAO);
+        VAO = 0;
+    }
+    vertexCount = 0;
 }
