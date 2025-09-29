@@ -2,7 +2,7 @@
 #define RadarGeometry_H
 
 #include <vector>
-#include "radarGeoType.h"
+#include "RadarTypes.h"
 
 class RadarGeometry
 {
@@ -39,7 +39,9 @@ public:
     float getSweepAngle() const { return sweepAngle; }
     float getTolerance() const { return detTolerance; }
 
-    std::vector<RadarVertex> generateGrid(int rings, int radials, int segment = 100);
+    std::vector<RadarVertex> generateRings(int rings, int segment = 100);
+    std::vector<RadarVertex> generateRadials(int radials, int segment = 100);
+
     std::vector<RadarVertex> generateSweep(float deltaTime, int segments = 100);
 
 private:
@@ -49,6 +51,8 @@ private:
     float scale;
     Vec4 gridColor;
     Vec4 sweepColor;
+
+    const float PI = 3.14159265358979323846f;
 };
 
 #endif

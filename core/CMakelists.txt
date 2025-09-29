@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(radar_core)
+
+set(CMAKE_CXX_STANDARD 11)
+
+file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+
+add_library(radar_core ${SRC_FILES})
+
+target_include_directories(radar_core
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+include(GNUInstallDirs)
+
+# Install core headers
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/core/include/ DESTINATION include)
+
+# Install core lib
+install(TARGETS radar_core
+    EXPORT radarTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

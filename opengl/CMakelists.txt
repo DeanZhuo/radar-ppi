@@ -1,0 +1,54 @@
+cmake_minimum_required(VERSION 3.10)
+project(radar_opengl)
+
+set(CMAKE_CXX_STANDARD 11)
+
+if(MINGW)
+  if ("${GLUT}" STREQUAL "")
+    message(FATAL_ERROR "GLUT libs not defined")
+  endif()
+  if ("${GLEW}" STREQUAL "")
+    message(FATAL_ERROR "GLEW libs not defined")
+  endif()
+  if ("${GLFW}" STREQUAL "")
+    message(FATAL_ERROR "GLFW libs not defined")
+  endif()
+
+  set(CMAKE_PREFIX_PATH "${MINGW_HOME};${GLUT};${GLEW};${GLFW}")
+  set(GLUT_INCLUDE_DIR "${GLUT}/include")
+endif()
+
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(glfw3 3.4 REQUIRED)
+
+file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+
+add_library(radar_opengl ${SRC_FILES})
+
+target_include_directories(radar_opengl
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(radar_opengl
+    PUBLIC radar_core
+            ${OPENGL_LIBRARIES}
+            GLUT::GLUT
+            GLEW::GLEW
+            glfw
+            
+)
+
+# Install OpenGL headers
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/opengl/include/ DESTINATION include)
+
+# Install opengl lib
+install(TARGETS radar_opengl
+    EXPORT radarTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

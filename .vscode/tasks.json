@@ -20,6 +20,16 @@
       "group": "build"
     },
     {
+      "label": "CMake > Install",
+      "type": "process",
+      "command": "${command:cmake.buildTarget}",
+      "args": [
+        "install"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "App > Launch",
       "group": "none",
       "type": "process",
@@ -32,8 +42,10 @@
       "options": {
         "cwd": "${workspaceFolder}/build/bin"
       },
-      "dependsOn": ["CMake > Build"]
-    }
+      "dependsOn": [
+        "CMake > Build"
+      ]
+    },
   ],
   "inputs": [
     {
@@ -43,5 +55,4 @@
       "default": "radar_ppi"
     },
   ],
-
 }

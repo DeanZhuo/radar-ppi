@@ -1,5 +1,5 @@
-#ifndef RadarGeoType_H
-#define RadarGeoType_H
+#ifndef RadarTypes_H
+#define RadarTypes_H
 
 struct Vec2
 {
