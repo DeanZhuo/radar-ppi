@@ -4,9 +4,18 @@ project(radar_core)
 
 set(CMAKE_CXX_STANDARD 11)
 
-file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+if(MINGW)
+    message(STATUS ">>> Linking MinGW runtime statically (portable)")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++ -pthread")
+endif()
 
-add_library(radar_core ${SRC_FILES})
+
+file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+list(REMOVE_ITEM SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/radar_c_api.cpp")
+
+add_library(radar_core STATIC ${SRC_FILES})
 
 target_include_directories(radar_core
     PUBLIC
@@ -14,15 +23,26 @@ target_include_directories(radar_core
         $<INSTALL_INTERFACE:include>
 )
 
+#include standard install paths
 include(GNUInstallDirs)
 
-# Install core headers
+# Install headers
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/core/include/ DESTINATION include)
 
-# Install core lib
+# Install lib
 install(TARGETS radar_core
     EXPORT radarTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+#C API
+add_library(radar_c_api SHARED src/radar_c_api.cpp)
+target_link_libraries(radar_c_api PUBLIC radar_core)
+target_compile_definitions(radar_c_api PRIVATE RADAR_BUILD_DLL)
+
+install(TARGETS radar_c_api
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib
 )

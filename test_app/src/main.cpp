@@ -7,6 +7,9 @@
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 
+int width = 600;
+int height = 600;
+
 int main()
 {
     if (!glfwInit())
@@ -21,7 +24,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow *window = glfwCreateWindow(800, 800, "LearnOpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(width, height, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -32,7 +35,7 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glViewport(0, 0, 800, 800);
+    glViewport(0, 0, width, height);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     GLenum err = glewInit();
@@ -63,12 +66,16 @@ int main()
     // set clear color
     glClearColor(0, 0, 0, 1);
 
-    RadarGeometry geo(60, 0, 5);
-    RadarRenderer ringRenderer, radialRenderer, sweepRenderer;
-    auto ringverts = geo.generateRings(5);
-    ringRenderer.upload(ringverts);
-    auto radialverts = geo.generateRadials(12);
-    radialRenderer.upload(radialverts);
+    RadarGeometry geo(60, 0, 60);
+    // RadarRenderer gridRenderer;
+    RadarRenderer ringRenderer, radialRenderer;
+    RadarRenderer sweepRenderer;
+    // auto gridVerts = geo.generateGrid(5, 12);
+    // gridRenderer.upload(gridVerts);
+    auto ringVerts = geo.generateRings(5);
+    ringRenderer.upload(ringVerts);
+    auto radialVerts = geo.generateRadials(12);
+    radialRenderer.upload(radialVerts);
     double lastTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(window))
@@ -83,7 +90,8 @@ int main()
         auto sweepVerts = geo.generateSweep(dt);
         sweepRenderer.upload(sweepVerts);
 
-        ringRenderer.render(GL_LINE_STRIP);
+        // gridRenderer.render(GL_LINES);
+        ringRenderer.render(GL_LINES);
         radialRenderer.render(GL_LINES);
         sweepRenderer.render(GL_TRIANGLE_FAN);
 

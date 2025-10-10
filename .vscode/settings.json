@@ -71,7 +71,18 @@
     "xlocmon": "cpp",
     "xlocnum": "cpp",
     "xloctime": "cpp",
-    "xstring": "cpp"
+    "xstring": "cpp",
+    "chrono": "cpp",
+    "filesystem": "cpp",
+    "forward_list": "cpp",
+    "iomanip": "cpp",
+    "mutex": "cpp",
+    "ratio": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp",
+    "codecvt": "cpp",
+    "condition_variable": "cpp",
+    "semaphore": "cpp"
   },
   "cmake.generator": "MinGW Makefiles",
   "cmake.configureSettings": {

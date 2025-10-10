@@ -2,53 +2,59 @@ cmake_minimum_required(VERSION 3.10)
 project(radar_opengl)
 
 set(CMAKE_CXX_STANDARD 11)
+set(BUILD_SHARED_LIBS OFF)
 
-if(MINGW)
-  if ("${GLUT}" STREQUAL "")
-    message(FATAL_ERROR "GLUT libs not defined")
-  endif()
-  if ("${GLEW}" STREQUAL "")
-    message(FATAL_ERROR "GLEW libs not defined")
-  endif()
-  if ("${GLFW}" STREQUAL "")
-    message(FATAL_ERROR "GLFW libs not defined")
-  endif()
-
-  set(CMAKE_PREFIX_PATH "${MINGW_HOME};${GLUT};${GLEW};${GLFW}")
-  set(GLUT_INCLUDE_DIR "${GLUT}/include")
+# MinGW static runtime
+if (MINGW)
+    if ("${GLEW}" STREQUAL "")
+        message(FATAL_ERROR "GLEW path not defined (-DGLEW=path/to/glew)")
+    endif()
+    if ("${GLFW}" STREQUAL "")
+        message(FATAL_ERROR "GLFW path not defined (-DGLFW=path/to/glfw)")
+    endif()
 endif()
 
 find_package(OpenGL REQUIRED)
-find_package(GLUT REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(glfw3 3.4 REQUIRED)
 
+# Source files
 file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+list(REMOVE_ITEM SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/radar_gl_api.cpp")
 
-add_library(radar_opengl ${SRC_FILES})
+# radar_opengl (SHARED )
+add_library(radar_opengl SHARED  ${SRC_FILES})
 
 target_include_directories(radar_opengl
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${GLEW}/include>
+        $<BUILD_INTERFACE:${GLFW}/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/core/include>
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(radar_opengl
-    PUBLIC radar_core
-            ${OPENGL_LIBRARIES}
-            GLUT::GLUT
-            GLEW::GLEW
-            glfw
-            
+target_link_libraries(radar_opengl PUBLIC
+    radar_core
+    "${GLEW}/bin/glew32.dll"
+    "${GLFW}/lib/libglfw3.a"
+    ${OPENGL_LIBRARIES}
+    gdi32
+    user32
+    shell32
 )
 
-# Install OpenGL headers
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/opengl/include/ DESTINATION include)
+# radar_gl_api (shared DLL wrapper)
+add_library(radar_gl_api SHARED src/radar_gl_api.cpp)
+target_link_libraries(radar_gl_api
+    PUBLIC
+        radar_opengl
+)
+target_compile_definitions(radar_gl_api PRIVATE RADAR_BUILD_DLL)
 
-# Install opengl lib
-install(TARGETS radar_opengl
+# Install
+include(GNUInstallDirs)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/opengl/include/ DESTINATION include)
+install(TARGETS radar_opengl radar_gl_api
     EXPORT radarTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

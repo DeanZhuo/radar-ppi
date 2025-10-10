@@ -1,52 +1,74 @@
 ### Radar Grid and Sweep
 #### Core: Generate Ring, Radial, and Sweep Geometry
-####  Opengl: Render Geometry using GLEW
+#### Opengl: Render Geometry using GLEW
 
-CMakeLists:<br>
-`set(radar_DIR "C:/Users/Bee/Documents/CCPP/dev/libs/radar-1.0/lib/cmake/radar")`
+Usage in C# (Avalonia, [SFDM](https://pm.infoglobal.co.id:9443/sw-avi/sfd-demo) as example)
 
-`find_package(radar 1.0 REQUIRED)
-`
+.csproj:
+```
+<PropertyGroup>
+	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+</PropertyGroup>
 
-`if (MINGW)
-  include_directories(${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} ${RADAR_INCLUDE_DIRS})
-endif()`
+<ItemGroup>
+	<Content Include="path\libs\radar-1.0\bin\libradar_c_api.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
+	<Content Include="path\libs\radar-1.0\bin\libradar_opengl.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
+	<Content Include="path\libs\glew-2.1.0\bin\glew32.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
+	<Content Include="path\libs\radar-1.0\bin\libradar_gl_api.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
+	<Content Include="path\mingw64\bin\libgcc_s_seh-1.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
+	<Content Include="path\mingw64\bin\libstdc++-6.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
+	<Content Include="path\mingw64\bin\libwinpthread-1.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
+</ItemGroup>
+```
 
-`target_link_libraries(OpenGLTest
-  ${OPENGL_LIBRARIES}
-  GLUT::GLUT
-  GLEW::GLEW
-  radar::radar_core
-  radar::radar_opengl
-  glfw
-)`
 
-main.cpp:<br>
-header:<br>
-`#include <RadarGeometry.h>
-#include <RadarRenderer.h>`
+Desktop/Program.cs to call OpenGL (Avalonia Windows use SKIA by default):
+```
+    BuildAvaloniaApp()
+        .With(new Win32PlatformOptions
+        {
+            RenderingMode = [Win32RenderingMode.Wgl],
+        })
+        .StartWithClassicDesktopLifetime(args);
+```
 
-to enable fading:<br>
-`glEnable(GL_BLEND);
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);`
+Create a Wrapper class to call DllImport (InteropServices):
+```
+const string LIB = "libradar_gl_api";
 
-geometry and renderer:<br>
-`RadarGeometry geo(60, 0, 5);
-RadarRenderer ringRenderer, radialRenderer, sweepRenderer;
-auto ringverts = geo.generateRings(5);
-ringRenderer.upload(ringverts);
-auto radialverts = geo.generateRadials(12);
-radialRenderer.upload(radialverts);
-double lastTime = glfwGetTime();`
+[DllImport(LIB, CallingConvention = CallingConvention.Cdecl)]
+public static extern int radar_gl_init();
+```
 
-inside the loop:<br>
-`double now = glfwGetTime();
-double dt = now - lastTime;
-lastTime = now;
-auto sweepVerts = geo.generateSweep(dt);
-sweepRenderer.upload(sweepVerts);
-ringRenderer.render(GL_LINE_STRIP);
-radialRenderer.render(GL_LINES);
-sweepRenderer.render(GL_TRIANGLE_FAN);`
 
-use main shader before drawing as the radar using its own shader.
+Implement to UI using Avalonia.OpenGL, init and call inside `OnOpenGlRender`, as `OnOpenGlInit` possibly not have the context ready.
+```
+public class RadarGLView : OpenGlControlBase
+{
+  protected override void OnOpenGlRender(GlInterface gl, int fb)
+  {
+      if (!_glInitialized)
+      {
+          RadarGLWrapper.radar_gl_init();
+          ctx = RadarGLWrapper.radar_create(Ring, Radial, 100, Speed, Detection);
+          _glInitialized = true;
+      }
+
+      RadarGLWrapper.radar_render(ctx, (int)Bounds.Width, (int)Bounds.Height, DeltaTime);
+  }
+}
+```
