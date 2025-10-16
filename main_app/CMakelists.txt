@@ -1,17 +1,25 @@
 cmake_minimum_required(VERSION 3.10)
-project(radar_test_app)
+project(radar_main_app)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
-add_executable(radar_test_app src/main.cpp)
+file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+
+add_executable(radar_main_app ${SRC_FILES})
+
+target_include_directories(radar_main_app
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
 
 # Link only to the highest-level library your app uses
-target_link_libraries(radar_test_app PRIVATE radar_gl_api)
+target_link_libraries(radar_main_app PRIVATE radar_gl_api ws2_32)
 
 add_definitions(-DGLEW_STATIC)
 
 # Optional: Define runtime output directory
-set_target_properties(radar_test_app PROPERTIES
+set_target_properties(radar_main_app PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
@@ -26,7 +34,7 @@ if (MINGW)
   find_file(WIN_PTHREAD_DLL libwinpthread-1.dll HINTS ${CMAKE_CXX_COMPILER} PATH_SUFFIXES ../bin)
 
   if(FREEGLUT_DLL AND GLEW_DLL AND STDCPP_DLL AND GCC_S_SEH_DLL AND WIN_PTHREAD_DLL)
-    add_custom_command(TARGET radar_test_app POST_BUILD
+    add_custom_command(TARGET radar_main_app POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${FREEGLUT_DLL} ${GLEW_DLL} ${STDCPP_DLL} ${GCC_S_SEH_DLL} ${WIN_PTHREAD_DLL}
       ${OUTPUT_DIR}

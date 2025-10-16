@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(radar_opengl)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SHARED_LIBS OFF)
 
 # MinGW static runtime
@@ -48,6 +48,13 @@ target_link_libraries(radar_gl_api
     PUBLIC
         radar_opengl
 )
+
+target_include_directories(radar_gl_api
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/core/include>
+        $<INSTALL_INTERFACE:include>
+)
+
 target_compile_definitions(radar_gl_api PRIVATE RADAR_BUILD_DLL)
 
 # Install

@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(radar_ppi VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # Add subprojects
 add_subdirectory(core)
 add_subdirectory(opengl)
-add_subdirectory(test_app)
+add_subdirectory(main_app)
 
 # Installation setup
 include(GNUInstallDirs)

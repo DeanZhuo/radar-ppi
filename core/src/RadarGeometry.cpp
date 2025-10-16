@@ -100,6 +100,17 @@ std::vector<RadarVertex> RadarGeometry::generateSweep(float deltaTime, int segme
     if (sweepAngle < 0.0f)
         sweepAngle += 360.0f;
 
+    result = generateStoppedSweep(sweepAngle, segments);
+
+    return result;
+}
+
+std::vector<RadarVertex> RadarGeometry::generateStoppedSweep(float angle, int segments)
+{
+    std::vector<RadarVertex> result;
+
+    sweepAngle = angle;
+
     float th0 = sweepAngle - detTolerance / 2.0f;
     float th1 = sweepAngle + detTolerance / 2.0f;
 

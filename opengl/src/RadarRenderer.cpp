@@ -2,6 +2,14 @@
 #include <GL/glew.h>
 #include <iostream>
 
+RadarRenderer::RadarRenderer() : vertexCount(0)
+{
+    CreateShaderProgram();
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glGenBuffers(1, &VBO);
+}
+
 RadarRenderer::~RadarRenderer()
 {
     cleanup();
@@ -10,20 +18,18 @@ RadarRenderer::~RadarRenderer()
 
 void RadarRenderer::upload(const std::vector<RadarVertex> &vertices)
 {
-    cleanup();
     vertexCount = vertices.size();
 
-    glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-
-    glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(RadarVertex), vertices.data(), GL_DYNAMIC_DRAW);
 
+    // position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(RadarVertex),
                           (void *)0);
 
+    // rgba
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(RadarVertex),
                           (void *)(sizeof(Vec2)));

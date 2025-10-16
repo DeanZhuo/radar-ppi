@@ -36,6 +36,7 @@ public:
     std::vector<RadarVertex> generateRings(int rings, int segment = 100);
     std::vector<RadarVertex> generateRadials(int radials, int segment = 100);
     std::vector<RadarVertex> generateSweep(float deltaTime, int segments = 100);
+    std::vector<RadarVertex> generateStoppedSweep(float angle, int segments = 100);
 
 private:
     float sweepSpeed;

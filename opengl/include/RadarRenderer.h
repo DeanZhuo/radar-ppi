@@ -6,14 +6,13 @@
 class RadarRenderer
 {
 public:
-    RadarRenderer() : VAO(0), VBO(0), vertexCount(0)
-    {
-        CreateShaderProgram();
-    }
+    RadarRenderer();
     ~RadarRenderer();
 
     void upload(const std::vector<RadarVertex> &vertices);
     void render(unsigned int drawMode);
+
+    int getVertexCount() { return vertexCount; }
 
 private:
     const char *vertexShaderSrc = R"(#version 330 core
